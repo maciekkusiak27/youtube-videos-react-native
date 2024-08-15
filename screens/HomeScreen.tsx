@@ -1,172 +1,181 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
 import axios from 'axios';
+import { useNavigation } from '@react-navigation/native';
 
 const HomeScreen = () => {
-//   const [videos, setVideos] = useState<any[]>([]);
-
-  const videos = [
-    { id: { videoId: '1' }, snippet: { thumbnails: { medium: { url: 'https://via.placeholder.com/120' } }, title: 'React Native Video 1' } },
-    { id: { videoId: '2' }, snippet: { thumbnails: { medium: { url: 'https://via.placeholder.com/120' } }, title: 'React Native Video 2' } },
-    { id: { videoId: '3' }, snippet: { thumbnails: { medium: { url: 'https://via.placeholder.com/120' } }, title: 'React Native Video 2' } },
-    { id: { videoId: '4' }, snippet: { thumbnails: { medium: { url: 'https://via.placeholder.com/120' } }, title: 'React Native Video 2' } },
-    { id: { videoId: '5' }, snippet: { thumbnails: { medium: { url: 'https://via.placeholder.com/120' } }, title: 'React Native Video 2' } },
-  ];
+  const navigation = useNavigation();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [videos, setVideos] = useState<any[]>([]);
   
-//   useEffect(() => {
-//     const fetchVideos = async () => {
-//       try {
-//         const response = await axios.get('https://www.googleapis.com/youtube/v3/search', {
-//           params: {
-//             part: 'snippet',
-//             q: 'React Native',
-//             type: 'video',
-//             key: 'YOUR_YOUTUBE_API_KEY',
-//           }
-//         });
-//         setVideos(response.data.items);
-//       } catch (error) {
-//         console.error(error);
-//       }
-//     };
+  const fetchVideos = async (query: string) => {
+    try {
+      const response = await axios.get('https://www.googleapis.com/youtube/v3/search', {
+        params: {
+          part: 'snippet',
+          q: query,
+          type: 'video',
+          key: 'AIzaSyB_-Txmf7tcvNpM91Eh9IArtqcicN45IWc',
+        }
+      });
+      setVideos(response.data.items);
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
-//     fetchVideos();
-//   }, []);
+  useEffect(() => {
+    fetchVideos('React Native');
+  }, []);
+
+  const handleSearch = () => {
+    navigation.navigate('Search', { query: searchQuery });
+  };
+
+  const handleVideoPress = (video) => {
+    console.log(video)
+    navigation.navigate('VideoDetails', { video });
+  };
+
+  const handleShowMore = (category: string) => {
+    navigation.navigate('Search', { query: category });
+  };
 
   return (
     <View style={styles.container}>
-    <View style={styles.header}>
-      <TextInput
-        style={styles.searchInput}
-        placeholder="Search videos"
-      />
-      <TouchableOpacity style={styles.settingsButton}>
-        <Image source={require('../assets/icons/settings-icon.svg')} style={styles.settingsIcon} />
-      </TouchableOpacity>
-    </View>
-
-    <View style={styles.sections}>
-      <View style={styles.section}>
-        <View style={styles.sectionHeadingView}>
-        <Text style={styles.sectionHeading}>React Native</Text>
-        <Text style={styles.showMore}>Show more</Text>
+      <View style={styles.header}>
+        <View style={styles.searchContainer}>
+          <Image
+            source={require('../assets/icons/search-icon.svg')}
+            style={styles.searchIcon}
+          />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search videos"
+            placeholderTextColor="#888"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            onSubmitEditing={handleSearch}
+          />
         </View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {videos.map(video => (
-            <View key={video.id.videoId} style={styles.videoContainer}>
-              <Image
-                source={{ uri: video.snippet.thumbnails.medium.url }}
-                style={styles.videoThumbnail}
-              />
-              <Text style={styles.videoTitle}>{video.snippet.title}</Text>
-            </View>
-          ))}
-        </ScrollView>
+        <TouchableOpacity style={styles.settingsButton} onPress={() => navigation.navigate('Settings')}>
+          <Image
+            source={require('../assets/icons/settings-icon.svg')}
+            style={styles.settingsIcon}
+          />
+        </TouchableOpacity>
       </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionHeading}>React</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {videos.map(video => (
-            <View key={video.id.videoId} style={styles.videoContainer}>
-              <Image
-                source={{ uri: video.snippet.thumbnails.medium.url }}
-                style={styles.videoThumbnail}
-              />
-              <Text style={styles.videoTitle}>{video.snippet.title}</Text>
+      <View style={styles.sections}>
+        {['React Native', 'React', 'TypeScript', 'JavaScript'].map((category) => (
+          <View key={category} style={styles.section}>
+            <View style={styles.sectionHeadingView}>
+              <Text style={styles.sectionHeading}>{category}</Text>
+              <TouchableOpacity onPress={() => handleShowMore(category)}>
+                <Text style={styles.showMore}>Show more</Text>
+              </TouchableOpacity>
             </View>
-          ))}
-        </ScrollView>
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionHeading}>TypeScript</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {videos.map(video => (
-            <View key={video.id.videoId} style={styles.videoContainer}>
-              <Image
-                source={{ uri: video.snippet.thumbnails.medium.url }}
-                style={styles.videoThumbnail}
-              />
-              <Text style={styles.videoTitle}>{video.snippet.title}</Text>
-            </View>
-          ))}
-        </ScrollView>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              {videos.map(video => (
+                <TouchableOpacity
+                  key={video.id.videoId}
+                  style={styles.videoContainer}
+                  onPress={() => handleVideoPress(video)}
+                >
+                  <Image
+                    source={{ uri: video.snippet.thumbnails.medium.url }}
+                    style={styles.videoThumbnail}
+                  />
+                  <Text style={styles.videoTitle}>{video.snippet.title}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+            <View style={styles.divider} />
+          </View>
+        ))}
       </View>
     </View>
-  </View>
   );
 };
 
 const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      padding: 16,
-      backgroundColor: '#fff',
-    },
-    header: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 16,
-      marginTop:16
-    },
-    searchInput: {
-      flex: 1,
-      height: 40,
-      borderColor: '#ddd',
-      borderWidth: 1,
-      borderRadius: 8,
-      paddingHorizontal: 8,
-    },
-    settingsButton: {
-      marginLeft: 16,
-    },
-    settingsIcon: {
-      width: 24,
-      height: 24,
-    },
-    scrollContainer: {
-      marginBottom: 16,
-    },
-    videoContainer: {
-      marginRight: 16,
-      alignItems: 'center',
-    },
-    videoThumbnail: {
-      width: 120,
-      height: 90,
-      borderRadius: 8,
-    },
-    videoTitle: {
-      marginTop: 8,
-      fontSize: 14,
-      color: '#333',
-      textAlign: 'center',
-    },
-    sections: {
-      flex: 1,
-    },
-    section: {
-      marginBottom: 24,
-    },
-    sectionTitle: {
-      fontSize: 20,
-      fontWeight: 'bold',
-      marginBottom: 8,
-    },
-    sectionHeading: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      marginBottom: 8,
-    },
-    sectionHeadingView:{
-        flexDirection: 'row',
-        justifyContent: 'space-between'
-    },
-    showMore:{
-        fontSize: 14,
-      }
-  });
-  
-  export default HomeScreen;
+  container: {
+    flex: 1,
+    padding: 16,
+    backgroundColor: '#fff',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 15,
+    height: 40,
+    width: '85%',
+    borderColor: '#2D3440',
+    borderWidth: 2,
+    paddingHorizontal: 8,
+  },
+  searchIcon: {
+    width: 20,
+    height: 20,
+    marginRight: 10,
+  },
+  searchInput: {
+    flex: 1,
+  },
+  settingsButton: {
+    marginLeft: 16,
+  },
+  settingsIcon: {
+    width: 24,
+    height: 24,
+  },
+  videoContainer: {
+    marginRight: 16,
+    alignItems: 'center',
+  },
+  videoThumbnail: {
+    width: 120,
+    height: 90,
+    borderRadius: 8,
+  },
+  videoTitle: {
+    marginVertical: 8,
+    fontSize: 14,
+    color: '#333333',
+    textAlign: 'center',
+  },
+  sections: {
+    flex: 1,
+  },
+  section: {
+    marginBottom: 24,
+  },
+  sectionHeading: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  sectionHeadingView: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  showMore: {
+    fontSize: 14,
+    textDecorationLine: 'underline',
+  },
+  divider: {
+    height: 4,
+    backgroundColor: '#000000',
+    marginVertical: 16,
+    marginHorizontal: -16,
+  },
+});
+
+export default HomeScreen;
