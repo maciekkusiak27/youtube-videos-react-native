@@ -19,7 +19,7 @@ const SearchScreen = () => {
           q: searchQuery,
           type: 'video',
           order: sortBy === 'most popular' ? 'viewCount' : 'date',
-          key: 'AIzaSyB_-Txmf7tcvNpM91Eh9IArtqcicN45IWc',
+          key: process.env.API_KEY,
         }
       });
       setVideos(response.data.items);

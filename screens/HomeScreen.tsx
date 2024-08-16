@@ -3,6 +3,7 @@ import { View, Text, TextInput, StyleSheet, ScrollView, Image, TouchableOpacity 
 import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
 
+
 const HomeScreen = () => {
   const navigation = useNavigation();
   const [searchQuery, setSearchQuery] = useState('');
@@ -15,7 +16,7 @@ const HomeScreen = () => {
           part: 'snippet',
           q: query,
           type: 'video',
-          key: 'AIzaSyB_-Txmf7tcvNpM91Eh9IArtqcicN45IWc',
+          key: process.env.API_KEY,
         }
       });
       setVideos(response.data.items);
