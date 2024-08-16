@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, StyleSheet, ScrollView, Image, TouchableOpacity, Modal, TouchableOpacityProps } from 'react-native';
 import axios from 'axios';
 import { useRoute, useNavigation } from '@react-navigation/native';
 
@@ -10,6 +10,7 @@ const SearchScreen = () => {
   const [searchQuery, setSearchQuery] = useState(query || '');
   const [videos, setVideos] = useState<any[]>([]);
   const [sortBy, setSortBy] = useState('most popular');
+  const [isModalVisible, setModalVisible] = useState(false);
 
   const fetchVideos = async (searchQuery: string) => {
     try {
@@ -42,38 +43,71 @@ const SearchScreen = () => {
     navigation.navigate('VideoDetails', { video });
   };
 
+  const handleSortOptionChange = (option: string) => {
+    setSortBy(option);
+  };
+
+  const handleConfirm = () => {
+    setModalVisible(false);
+  };
+
   return (
     <View style={styles.container}>
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={isModalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>Sort records by</Text>
+            <View style={styles.optionsContainer}>
+              {['Upload date: oldest', 'Upload date: newest', 'Most popular'].map(option => (
+                <TouchableOpacity
+                  key={option}
+                  style={styles.optionContainer}
+                  onPress={() => handleSortOptionChange(option)}
+                >
+                  <View style={[styles.radioButton, sortBy === option && styles.radioButtonChecked]}>
+                    {sortBy === option && <View style={styles.radioButtonInner} />}
+                  </View>
+                  <Text style={styles.sortOption}>{option}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <TouchableOpacity style={styles.confirmButton} onPress={handleConfirm}>
+              <Text style={styles.confirmButtonText}>Confirm</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
       {searchQuery ? (
         <View>
           <View style={styles.header}>
-          <View style={styles.searchContainer}>
-          <Image
-            source={require('../assets/icons/search-icon.svg')}
-            style={styles.searchIcon}
-          />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search videos"
-            placeholderTextColor="#888"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            onSubmitEditing={handleSearch}
-          />
-        </View>
-            <Text style={styles.resultsText}>{`${videos.length} results found for "${searchQuery}"`}</Text>
-            <View style={styles.sortContainer}>
-              <Text style={styles.sortLabel}>Sort by:</Text>
-              <TouchableOpacity onPress={() => setSortBy('most popular')}>
-                <Text style={[styles.sortOption, sortBy === 'most popular' && styles.selectedSortOption]}>Most popular</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => setSortBy('newest')}>
-                <Text style={[styles.sortOption, sortBy === 'newest' && styles.selectedSortOption]}>Newest</Text>
-              </TouchableOpacity>
+            <View style={styles.searchContainer}>
+              <Image
+                source={require('../assets/icons/search-icon.svg')}
+                style={styles.searchIcon}
+              />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search videos"
+                placeholderTextColor="#888"
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                onSubmitEditing={handleSearch}
+              />
             </View>
+            <Text style={styles.resultsText}>{`${videos.length} results found for "${searchQuery}"`}</Text>
+            <TouchableOpacity style={styles.sortContainer} onPress={() => setModalVisible(true)}>
+              <Text style={styles.sortLabel}>Sort by:</Text>
+              <Text style={styles.sortValue}>{sortBy}</Text>
+            </TouchableOpacity>
           </View>
 
-          <ScrollView style={styles.scrollContainer}>
+          <ScrollView contentContainerStyle={styles.scrollContainer}>
             {videos.map(video => (
               <TouchableOpacity
                 key={video.id.videoId}
@@ -119,28 +153,89 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: 16,
-    marginTop: 24
+    marginTop: 24,
   },
   resultsText: {
-    fontSize: 10,
+    fontSize: 14,
+    marginBottom: 8,
   },
   sortContainer: {
+    justifyContent:'flex-end',
     flexDirection: 'row',
-    justifyContent: 'flex-end',
     alignItems: 'center',
+    padding: 8,
   },
   sortLabel: {
-    fontSize: 12,
+    fontSize: 14,
+    marginRight: 8,
+    color: '#333',
+  },
+  sortValue: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContainer: {
+    width: '80%',
+    padding: 16,
+    backgroundColor: '#8D99AE',
+    borderRadius: 8,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 16,
+    color: '#fff',
+  },
+  optionsContainer: {
+    marginBottom: 16,
+  },
+  optionContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  radioButton: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: 8,
   },
-  sortOption: {
-    fontSize: 12,
+  radioButtonChecked: {
+    borderColor: '#fff',
   },
-  selectedSortOption: {
-    fontWeight: 'bold',
+  radioButtonInner: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#000',
+  },
+  sortOption: {
+    fontSize: 16,
+    color: '#fff',
+  },
+  confirmButton: {
+    backgroundColor: '#2D3440',
+    padding: 8,
+    borderRadius: 15,
+  },
+  confirmButtonText: {
+    color: '#ffffff',
+    textAlign: 'center',
+    fontWeight: 'bold'
   },
   scrollContainer: {
-    flex: 1,
+    flexGrow: 1,
   },
   videoContainer: {
     marginBottom: 24,
