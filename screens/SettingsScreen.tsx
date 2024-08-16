@@ -1,67 +1,146 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, Switch } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, StyleSheet, ScrollView, Image, TouchableOpacity, Modal, TouchableOpacityProps } from 'react-native';
+import axios from 'axios';
+import { useRoute, useNavigation } from '@react-navigation/native';
 
-const SettingsScreen = () => {
+const SearchScreen = () => {
   const navigation = useNavigation();
-  const [isReminderEnabled, setIsReminderEnabled] = useState(true);
-  let repeatTime = '12:00'
+  const route = useRoute();
+  const { query } = route.params || {};
+  const [searchQuery, setSearchQuery] = useState(query || '');
+  const [videos, setVideos] = useState<any[]>([]);
+  const [sortBy, setSortBy] = useState('most popular');
+  const [isModalVisible, setModalVisible] = useState(false);
 
+  const fetchVideos = async (searchQuery: string) => {
+    try {
+      const response = await axios.get('https://www.googleapis.com/youtube/v3/search', {
+        params: {
+          part: 'snippet',
+          q: searchQuery,
+          type: 'video',
+          order: sortBy === 'most popular' ? 'viewCount' : 'date',
+          key: process.env.API_KEY,
+        }
+      });
+      setVideos(response.data.items);
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
-  const toggleSwitch = () => setIsReminderEnabled(previousState => !previousState);
+  useEffect(() => {
+    if (searchQuery) {
+      fetchVideos(searchQuery);
+    }
+  }, [searchQuery, sortBy]);
 
+  const handleSearch = () => {
+    navigation.navigate('Search', { query: searchQuery });
+  };
+
+  const handleVideoPress = (video) => {
+    navigation.navigate('VideoDetails', { video });
+  };
+
+  const handleSortOptionChange = (option: string) => {
+    setSortBy(option);
+  };
+
+  const handleConfirm = () => {
+    setModalVisible(false);
+  };
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Image
-            source={require('../assets/icons/leftarrow-icon.svg')}
-            style={styles.backIcon}
-          />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Settings</Text>
-      </View>
-
-      <View style={styles.userInfo}>
-        <Image
-          source={require('../assets/icons/person-icon.svg')}
-          style={styles.userIcon}
-        />
-        <Text style={styles.userName}>John Doe</Text>
-      </View>
-
-      <View style={styles.divider} />
-
-      <View style={styles.reminders}>
-        <Image
-          source={require('../assets/icons/notification-icon.svg')}
-          style={styles.bellIcon}
-        />
-        <Text style={styles.remindersText}>Learning reminders</Text>
-      </View>
-
-      <View style={styles.repeatContainer}>
-        <Text style={styles.repeatText}>Repeat everyday at:</Text>
-        <View style={styles.clockView}>
-        <Image
-          source={require('../assets/icons/clock-icon.svg')}
-          style={styles.clockIcon}
-        />
-        <Text>{repeatTime}</Text>
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={isModalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>Sort records by</Text>
+            <View style={styles.optionsContainer}>
+              {['Upload date: oldest', 'Upload date: newest', 'Most popular'].map(option => (
+                <TouchableOpacity
+                  key={option}
+                  style={styles.optionContainer}
+                  onPress={() => handleSortOptionChange(option)}
+                >
+                  <View style={[styles.radioButton, sortBy === option && styles.radioButtonChecked]}>
+                    {sortBy === option && <View style={styles.radioButtonInner} />}
+                  </View>
+                  <Text style={styles.sortOption}>{option}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <TouchableOpacity style={styles.confirmButton} onPress={handleConfirm}>
+              <Text style={styles.confirmButtonText}>Confirm</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-        <Switch
-         trackColor={{false: 'red', true: 'orange'}}
-         thumbColor={isReminderEnabled ? 'pink' : 'purple'}
-          value={isReminderEnabled}
-          onValueChange={toggleSwitch}
-          style={styles.switch}
-        />
-      </View>
+      </Modal>
 
-      <Text style={styles.studyReminderText}>
-        You will receive friendly reminder to remember to study
-      </Text>
+      {searchQuery ? (
+        <View>
+          <View style={styles.header}>
+            <View style={styles.searchContainer}>
+              <Image
+                source={require('../assets/icons/search-icon.svg')}
+                style={styles.searchIcon}
+              />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search videos"
+                placeholderTextColor="#888"
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                onSubmitEditing={handleSearch}
+              />
+            </View>
+            <Text style={styles.resultsText}>{`${videos.length} results found for "${searchQuery}"`}</Text>
+            <TouchableOpacity style={styles.sortContainer} onPress={() => setModalVisible(true)}>
+              <Text style={styles.sortLabel}>Sort by:</Text>
+              <Text style={styles.sortValue}>{sortBy}</Text>
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView contentContainerStyle={styles.scrollContainer}>
+            {videos.map(video => (
+              <TouchableOpacity
+                key={video.id.videoId}
+                style={styles.videoContainer}
+                onPress={() => handleVideoPress(video)}
+              >
+                <Image
+                  source={{ uri: video.snippet.thumbnails.high.url }}
+                  style={styles.videoThumbnail}
+                />
+                <Text style={styles.videoTitle}>{video.snippet.title}</Text>
+                <Text style={styles.videoDescription}>{video.snippet.description}</Text>
+                <Text style={styles.videoDate}>{new Date(video.snippet.publishedAt).toLocaleDateString()}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      ) : (
+        <View style={styles.searchContainer}>
+          <Image
+            source={require('../assets/icons/search-icon.svg')}
+            style={styles.searchIcon}
+          />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search videos"
+            placeholderTextColor="#888"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            onSubmitEditing={handleSearch}
+          />
+        </View>
+      )}
     </View>
   );
 };
@@ -73,83 +152,129 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   header: {
+    marginBottom: 16,
+    marginTop: 24,
+  },
+  resultsText: {
+    fontSize: 14,
+    marginBottom: 8,
+  },
+  sortContainer: {
+    justifyContent:'flex-end',
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    padding: 8,
   },
-  backButton: {
-    marginRight: 16,
+  sortLabel: {
+    fontSize: 14,
+    marginRight: 8,
+    color: '#333',
   },
-  backIcon: {
-    width: 24,
-    height: 24,
-  },
-  headerTitle: {
-    fontSize: 20,
+  sortValue: {
+    fontSize: 14,
     fontWeight: 'bold',
+    color: '#333',
   },
-  userInfo: {
-    flexDirection: 'row',
+  modalOverlay: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    marginVertical: 16,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
-  userIcon: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    marginRight: 16,
-    backgroundColor: '#2D3440'
+  modalContainer: {
+    width: '80%',
+    padding: 16,
+    backgroundColor: '#8D99AE',
+    borderRadius: 8,
   },
-  userName: {
+  modalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
+    marginBottom: 16,
+    color: '#fff',
   },
-  divider: {
-    height: 4,
+  optionsContainer: {
+    marginBottom: 16,
+  },
+  optionContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  radioButton: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  radioButtonChecked: {
+    borderColor: '#fff',
+  },
+  radioButtonInner: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
     backgroundColor: '#000',
-    marginVertical: 16,
-    marginHorizontal: -16
   },
-  reminders: {
+  sortOption: {
+    fontSize: 16,
+    color: '#fff',
+  },
+  confirmButton: {
+    backgroundColor: '#2D3440',
+    padding: 8,
+    borderRadius: 15,
+  },
+  confirmButtonText: {
+    color: '#ffffff',
+    textAlign: 'center',
+  },
+  scrollContainer: {
+    flexGrow: 1,
+  },
+  videoContainer: {
+    marginBottom: 24,
+  },
+  videoThumbnail: {
+    width: '100%',
+    height: 180,
+    borderRadius: 8,
+  },
+  videoTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginVertical: 8,
+  },
+  videoDescription: {
+    fontSize: 16,
+    color: '#333',
+    marginBottom: 4,
+  },
+  videoDate: {
+    fontSize: 14,
+    color: '#666',
+  },
+  searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    borderRadius: 15,
+    height: 40,
+    borderColor: '#2D3440',
+    borderWidth: 2,
+    paddingHorizontal: 8,
   },
-  bellIcon: {
-    width: 32,
-    height: 32,
-    marginRight: 16,
+  searchIcon: {
+    width: 20,
+    height: 20,
+    marginRight: 10,
   },
-  remindersText: {
-    fontSize: 16,
-  },
-  repeatContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginVertical: 16,
-  },
-  repeatText: {
-    fontSize: 16,
-    marginRight: 16,
+  searchInput: {
     flex: 1,
-  },
-  clockIcon: {
-    width: 24,
-    height: 24,
-    marginRight: 16,
-  },
-  clockView:{
-flexDirection:'row'
-  },
-  switch: {
-    marginLeft: 'auto',
-  },
-  studyReminderText: {
-    fontSize: 12,
-    marginTop: 16,
-    fontWeight: 'bold'
   },
 });
 
-export default SettingsScreen;
+export default SearchScreen;

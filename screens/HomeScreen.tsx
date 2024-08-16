@@ -3,38 +3,58 @@ import { View, Text, TextInput, StyleSheet, ScrollView, Image, TouchableOpacity 
 import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
 
+type Video = {
+  id: {
+    videoId: string;
+  };
+  snippet: {
+    title: string;
+    description: string;
+    thumbnails: {
+      medium: {
+        url: string;
+      };
+    };
+  };
+};
 
-const HomeScreen = () => {
+const HomeScreen: React.FC = () => {
   const navigation = useNavigation();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [videos, setVideos] = useState<any[]>([]);
-  
-  const fetchVideos = async (query: string) => {
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [reactNativeVideos, setReactNativeVideos] = useState<Video[]>([]);
+  const [reactVideos, setReactVideos] = useState<Video[]>([]);
+  const [typescriptVideos, setTypeScriptVideos] = useState<Video[]>([]);
+  const [javascriptVideos, setJavaScriptVideos] = useState<Video[]>([]);
+
+  const fetchVideosByCategory = async (category: string, setState: React.Dispatch<React.SetStateAction<Video[]>>) => {
     try {
       const response = await axios.get('https://www.googleapis.com/youtube/v3/search', {
         params: {
           part: 'snippet',
-          q: query,
+          q: category,
           type: 'video',
-          key: process.env.API_KEY,
-        }
+          key: process.env.API_KEY, 
+        },
       });
-      setVideos(response.data.items);
+      setState(response.data.items);
     } catch (error) {
       console.error(error);
     }
   };
 
   useEffect(() => {
-    fetchVideos('React Native');
+    fetchVideosByCategory('React Native', setReactNativeVideos);
+    fetchVideosByCategory('React', setReactVideos);
+    fetchVideosByCategory('TypeScript', setTypeScriptVideos);
+    fetchVideosByCategory('JavaScript', setJavaScriptVideos);
   }, []);
 
   const handleSearch = () => {
     navigation.navigate('Search', { query: searchQuery });
   };
 
-  const handleVideoPress = (video) => {
-    console.log(video)
+  const handleVideoPress = (video: Video) => {
+    console.log(video);
     navigation.navigate('VideoDetails', { video });
   };
 
@@ -43,6 +63,7 @@ const HomeScreen = () => {
   };
 
   return (
+    <ScrollView contentContainerStyle={styles.scrollContainer}>
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.searchContainer}>
@@ -68,38 +89,76 @@ const HomeScreen = () => {
       </View>
 
       <View style={styles.sections}>
-        {['React Native', 'React', 'TypeScript', 'JavaScript'].map((category) => (
-          <View key={category} style={styles.section}>
-            <View style={styles.sectionHeadingView}>
-              <Text style={styles.sectionHeading}>{category}</Text>
-              <TouchableOpacity onPress={() => handleShowMore(category)}>
-                <Text style={styles.showMore}>Show more</Text>
-              </TouchableOpacity>
-            </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              {videos.map(video => (
-                <TouchableOpacity
-                  key={video.id.videoId}
-                  style={styles.videoContainer}
-                  onPress={() => handleVideoPress(video)}
-                >
-                  <Image
-                    source={{ uri: video.snippet.thumbnails.medium.url }}
-                    style={styles.videoThumbnail}
-                  />
-                  <Text style={styles.videoTitle}>{video.snippet.title}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-            <View style={styles.divider} />
-          </View>
-        ))}
+        <CategorySection
+          category="React Native"
+          videos={reactNativeVideos}
+          handleVideoPress={handleVideoPress}
+          handleShowMore={handleShowMore}
+        />
+        <CategorySection
+          category="React"
+          videos={reactVideos}
+          handleVideoPress={handleVideoPress}
+          handleShowMore={handleShowMore}
+        />
+        <CategorySection
+          category="TypeScript"
+          videos={typescriptVideos}
+          handleVideoPress={handleVideoPress}
+          handleShowMore={handleShowMore}
+        />
+        <CategorySection
+          category="JavaScript"
+          videos={javascriptVideos}
+          handleVideoPress={handleVideoPress}
+          handleShowMore={handleShowMore}
+        />
       </View>
     </View>
+    </ScrollView>
   );
 };
 
+type CategorySectionProps = {
+  category: string;
+  videos: Video[];
+  handleVideoPress: (video: Video) => void;
+  handleShowMore: (category: string) => void;
+};
+
+const CategorySection: React.FC<CategorySectionProps> = ({ category, videos, handleVideoPress, handleShowMore }) => (
+  <View style={styles.section}>
+    <View style={styles.sectionHeadingView}>
+      <Text style={styles.sectionHeading}>{category}</Text>
+      <TouchableOpacity onPress={() => handleShowMore(category)}>
+        <Text style={styles.showMore}>Show more</Text>
+      </TouchableOpacity>
+    </View>
+    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+      {videos.map((video) => (
+        <TouchableOpacity
+          key={video.id.videoId}
+          style={styles.videoContainer}
+          onPress={() => handleVideoPress(video)}
+        >
+          <Image
+            source={{ uri: video.snippet.thumbnails.medium.url }}
+            style={styles.videoThumbnail}
+          />
+          <Text style={styles.videoTitle} numberOfLines={2}>
+            {video.snippet.title}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </ScrollView>
+    <View style={styles.divider} />
+  </View>
+);
+
 const styles = StyleSheet.create({
+  scrollContainer: {
+    flexGrow: 1,
+  },
   container: {
     flex: 1,
     padding: 16,
@@ -136,21 +195,6 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
   },
-  videoContainer: {
-    marginRight: 16,
-    alignItems: 'center',
-  },
-  videoThumbnail: {
-    width: 120,
-    height: 90,
-    borderRadius: 8,
-  },
-  videoTitle: {
-    marginVertical: 8,
-    fontSize: 14,
-    color: '#333333',
-    textAlign: 'center',
-  },
   sections: {
     flex: 1,
   },
@@ -170,6 +214,23 @@ const styles = StyleSheet.create({
   showMore: {
     fontSize: 14,
     textDecorationLine: 'underline',
+  },
+  videoContainer: {
+    marginRight: 16,
+    alignItems: 'center',
+    maxWidth: 120,
+  },
+  videoThumbnail: {
+    width: 120,
+    height: 90,
+    borderRadius: 8,
+  },
+  videoTitle: {
+    marginVertical: 8,
+    fontSize: 14,
+    color: '#333333',
+    textAlign: 'center',
+    maxWidth: 120, 
   },
   divider: {
     height: 4,
