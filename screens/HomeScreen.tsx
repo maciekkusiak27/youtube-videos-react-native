@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
 import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
+import { API_KEY } from '@env';
 
 type Video = {
   id: {
@@ -30,10 +31,10 @@ const HomeScreen: React.FC = () => {
     try {
       const response = await axios.get('https://www.googleapis.com/youtube/v3/search', {
         params: {
-          part: 'snippet',
+          part: 'snippet, statistics',
           q: category,
           type: 'video',
-          key: process.env.API_KEY, 
+          key: API_KEY, 
         },
       });
       setState(response.data.items);
@@ -229,7 +230,7 @@ const styles = StyleSheet.create({
     marginVertical: 8,
     fontSize: 14,
     color: '#333333',
-    textAlign: 'center',
+    textAlign: 'justify',
     maxWidth: 120, 
   },
   divider: {
