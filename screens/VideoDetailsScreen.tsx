@@ -2,15 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, TextInput, Button } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
+import Video, {VideoRef} from 'react-native-video';
+import { Colors } from '../constants/colors';
 
 const VideoDetailsScreen = ({ route }) => {
   const navigation = useNavigation();
-  const { video } = route.params;
+  const { video } = route.params; 
 
   const [activeTab, setActiveTab] = useState('Details');
   const [notes, setNotes] = useState<string[]>([]);
   const [newNote, setNewNote] = useState<string>('');
-console.log(route)
+
   useEffect(() => {
     const fetchNotes = async () => {
       try {
@@ -48,10 +50,9 @@ console.log(route)
     }
   };
 
-  // todo: get from route
   const statistics = {
-    views: '1,234,567',
-    likes: '123,456',
+    views: video.statistics.viewCount,
+    likes: video.statistics.likeCount,
   };
 
   return (
@@ -59,14 +60,8 @@ console.log(route)
       <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
         <Image source={require('../assets/icons/leftarrow-icon.svg')} style={styles.backIcon} />
       </TouchableOpacity>
+      {/* <Video/> */}
       <Text style={styles.title}>{video.snippet.title}</Text>
-
-      {/* Komponent Video */}
-      {/* <Video 
-        source={{ uri: videoUrl }} 
-        controls={true}
-        style={styles.videoPlayer}
-      /> */}
 
       <View style={styles.channelContainer}>
         <Image source={require('../assets/icons/person-icon.svg')} style={styles.channelIcon} />
@@ -130,7 +125,7 @@ console.log(route)
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: Colors.white,
     padding: 16,
   },
   backButton: {
@@ -169,7 +164,7 @@ const styles = StyleSheet.create({
     borderBottomColor: 'transparent',
   },
   activeTab: {
-    borderBottomColor: '#007BFF',
+    borderBottomColor: Colors.primary,
   },
   tabText: {
     fontSize: 16,
@@ -187,7 +182,7 @@ const styles = StyleSheet.create({
   },
   description: {
     fontSize: 16,
-    color: '#333',
+    color: Colors.text, 
   },
   notesContainer: {
     marginBottom: 16,
@@ -216,6 +211,9 @@ const styles = StyleSheet.create({
   statItem: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: Colors.secondary, 
+    padding: 8,
+    borderRadius: 15,
   },
   statIcon: {
     width: 24,
@@ -224,6 +222,14 @@ const styles = StyleSheet.create({
   },
   statText: {
     fontSize: 16,
+    color: Colors.white,
+  },
+  backgroundVideo: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    bottom: 0,
+    right: 0,
   },
 });
 

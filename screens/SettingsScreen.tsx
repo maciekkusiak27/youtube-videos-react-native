@@ -8,6 +8,7 @@ import {
   Switch,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { Colors } from "../constants/colors";
 
 const SettingsScreen = () => {
   const navigation = useNavigation();
@@ -60,8 +61,8 @@ const SettingsScreen = () => {
           <Text>{repeatTime}</Text>
         </View>
         <Switch
-          trackColor={{ false: "red", true: "orange" }}
-          thumbColor={isReminderEnabled ? "pink" : "purple"}
+          trackColor={{ false: Colors.secondary, true: Colors.primary }}
+          thumbColor={isReminderEnabled ? Colors.white : Colors.text}
           value={isReminderEnabled}
           onValueChange={toggleSwitch}
           style={styles.switch}
@@ -69,7 +70,7 @@ const SettingsScreen = () => {
       </View>
 
       <Text style={styles.studyReminderText}>
-        You will receive friendly reminder to remember to study
+        You will receive a friendly reminder to remember to study
       </Text>
     </View>
   );
@@ -79,7 +80,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    backgroundColor: "#fff",
+    backgroundColor: Colors.white,
   },
   header: {
     flexDirection: "row",
@@ -96,6 +97,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: "bold",
+    color: Colors.text,
   },
   userInfo: {
     flexDirection: "row",
@@ -108,15 +110,16 @@ const styles = StyleSheet.create({
     height: 50,
     borderRadius: 25,
     marginRight: 16,
-    backgroundColor: "#2D3440",
+    backgroundColor: Colors.secondary,
   },
   userName: {
     fontSize: 18,
     fontWeight: "bold",
+    color: Colors.text,
   },
   divider: {
     height: 4,
-    backgroundColor: "#000",
+    backgroundColor: Colors.text,
     marginVertical: 16,
     marginHorizontal: -16,
   },
@@ -131,6 +134,7 @@ const styles = StyleSheet.create({
   },
   remindersText: {
     fontSize: 16,
+    color: Colors.text,
   },
   repeatContainer: {
     flexDirection: "row",
@@ -142,6 +146,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginRight: 16,
     flex: 1,
+    color: Colors.text,
   },
   clockIcon: {
     width: 24,
@@ -158,6 +163,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 16,
     fontWeight: "bold",
+    color: Colors.text,
   },
 });
 
